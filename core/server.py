@@ -1,16 +1,18 @@
-from flask import jsonify
+from flask import jsonify # type: ignore
 from marshmallow.exceptions import ValidationError
 from core import app
-from core.apis.assignments import student_assignments_resources, teacher_assignments_resources
+from core.apis.assignments import student_assignments_resources, teacher_assignments_resources, principle_assignments_resources
 from core.libs import helpers
 from core.libs.exceptions import FyleError
 from werkzeug.exceptions import HTTPException
-
 from sqlalchemy.exc import IntegrityError
 
+# Register existing blueprints
 app.register_blueprint(student_assignments_resources, url_prefix='/student')
 app.register_blueprint(teacher_assignments_resources, url_prefix='/teacher')
 
+# Register the new blueprint
+app.register_blueprint(principle_assignments_resources, url_prefix='/principal')
 
 @app.route('/')
 def ready():
@@ -18,9 +20,7 @@ def ready():
         'status': 'ready',
         'time': helpers.get_utc_now()
     })
-
     return response
-
 
 @app.errorhandler(Exception)
 def handle_error(err):
@@ -41,4 +41,7 @@ def handle_error(err):
             error=err.__class__.__name__, message=str(err)
         ), err.code
 
-    raise err
+    # Handle unexpected errors
+    return jsonify(
+        error='InternalServerError', message='An unexpected error occurred'
+    ), 500
